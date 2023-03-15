@@ -74,36 +74,69 @@ const API_KEY = '730f090ace12567ff185ff240095513d';
 
 currentTab.classList.add('current-tab');
 
-// getFromSessionStorage();
+getFromSessionStorage();    
 
-function renderWeatherInfo(weatherInfo){
-    // firstly we have to fetch all the variables to store data in them and then show on the UI
+// grantAccessContainer.classList.add('active');
 
-    const cityName = document.querySelector("[data-cityName]");
-    const countryIcon = document.querySelector("[data-countryIcon]");
-    const desc = document.querySelector("[data-weatherDesc]");
-    const weatherIcon = document.querySelector("[data-weatherIcon]");
-    const temp = document.querySelector("[data-temp]");
-    const windspeed = document.querySelector("[data-windspeed]");
-    const humidity = document.querySelector("[data-humidity]");
-    const cloudiness = document.querySelector("[data-cloudiness]");
+// function for switching tabs
 
-    //fetch values from API to the variables
+function switchTab(clickedTab){
+    if(clickedTab != currentTab){
+        currentTab.classList.remove('current-tab');
+        currentTab = clickedTab;
+        currentTab.classList.add('current-tab');
 
-    cityName.innerText = weatherInfo?.name;
-    countryIcon.src = `https://flagcdn.com/144x108/${weatherInfo?.sys?.country.toLowerCase()}.png`;
-    desc.innerText = weatherInfo?.weather?.[0]?.description;
-    weatherIcon.src = `http://openweathermap.org/img/w/${weatherInfo?.weather?.[0]?.icon}.png`;
-    temp.innerText = `${weatherInfo?.main?.temp} °C `;
-    windspeed.innerText = weatherInfo?.wind?.speed;
-    humidity.innerText = weatherInfo?.main?.humidity;
-    cloudiness.innerText = weatherInfo?.clouds?.all; 
+        if(!searchForm.classList.contains('active')){
+            grantAccessContainer.classList.remove('active');
+            // userTab.classList.remove('active');
+            userInfoContainer.classList.remove('active');
+            searchForm.classList.add('active');
+        }
 
+        else{
+            
+            // grantAccessContainer.classList.rem('active');
+            userInfoContainer.classList.remove('active');
+            searchForm.classList.remove('active');
+
+            getFromSessionStorage();    
+        }
+
+    }
 }
 
+userTab.addEventListener('click' ,()=>{
+    //you clicked on userTab so current tab will switch to user tab 
+    switchTab(userTab);
+
+});
+
+searchTab.addEventListener('click' ,()=>{
+    //you clicked on userTab so current tab will switch to user tab 
+    switchTab(searchTab);
+
+
+});
+
+
+
+
+// Function for storing coordinates to show user weather
+
+
+function getFromSessionStorage(){
+    const localCoordinates = sessionStorage.getItem('user-coordinates');
+
+    if(!localCoordinates){
+        grantAccessContainer.classList.add('active');
+    }
+    else{
+        const coordinates = JSON.parse(localCoordinates);
+        fetchUserWeatherInfo(coordinates);
+    }
+}
 
 // fetch user weather data
-
 
 async function fetchUserWeatherInfo(coordinates){
     const {lat , long} = coordinates;
@@ -131,46 +164,29 @@ async function fetchUserWeatherInfo(coordinates){
     }
 }
 
+function renderWeatherInfo(weatherInfo){
+    // firstly we have to fetch all the variables to store data in them and then show on the UI
 
+    const cityName = document.querySelector("[data-cityName]");
+    const countryIcon = document.querySelector("[data-countryIcon]");
+    const desc = document.querySelector("[data-weatherDesc]");
+    const weatherIcon = document.querySelector("[data-weatherIcon]");
+    const temp = document.querySelector("[data-temp]");
+    const windspeed = document.querySelector("[data-windspeed]");
+    const humidity = document.querySelector("[data-humidity]");
+    const cloudiness = document.querySelector("[data-cloudiness]");
 
-// Function for storing coordinates to show user weather
+    //fetch values from API to the variables
 
+    cityName.innerText = weatherInfo?.name;
+    countryIcon.src = `https://flagcdn.com/144x108/${weatherInfo?.sys?.country.toLowerCase()}.png`;
+    desc.innerText = weatherInfo?.weather?.[0]?.description;
+    weatherIcon.src = `http://openweathermap.org/img/w/${weatherInfo?.weather?.[0]?.icon}.png`;
+    temp.innerText = `${weatherInfo?.main?.temp} °C`;
+    windspeed.innerText = `${weatherInfo?.wind?.speed} m/s`;
+    humidity.innerText = `${weatherInfo?.main?.humidity}%`;
+    cloudiness.innerText = `${weatherInfo?.clouds?.all}%` ; 
 
-function getFromSessionStorage(){
-    let localCoordinates = sessionStorage.getItem('user-coordinates');
-
-    if(!localCoordinates){
-        grantAccessContainer.classList.add('active');
-    }
-    else{
-        const coordinates = JSON.parse(localCoordinates);
-        fetchUserWeatherInfo(coordinates);
-    }
-}
-
-// function for switching tabs
-
-function switchTab(clickedTab){
-    if(clickedTab != currentTab){
-        currentTab.classList.remove('current-tab');
-        currentTab = clickedTab;
-        currentTab.classList.add('current-tab');
-
-        if(!searchForm.classList.contains('active')){
-            grantAccessContainer.classList.remove('active');
-            userTab.classList.remove('active');
-            searchForm.classList.add('active');
-        }
-
-        else{
-            grantAccessContainer.classList.remove('active');
-            //userTab.classList.add('active');
-            searchForm.classList.remove('active');
-
-            getFromSessionStorage();
-        }
-
-    }
 }
 
 
@@ -188,7 +204,7 @@ function getLocation() {
 
 function showPosition(position){
     
-    let userCoordinate = {
+    const userCoordinate = {
         lat : position.coords.latitude,
         long : position.coords.longitude,
     }
@@ -198,22 +214,39 @@ function showPosition(position){
 }
 
 
+grantAccessButton.addEventListener('click' , getLocation);
+
+searchForm.addEventListener('submit' , (e)=>{
+    e.preventDefault();
+
+    let city = searchInput.value;
+
+    if(city === "") return;
+
+    else{
+        fetchWeatherinfoCity(city);
+    }
+
+})
+
+
 
 //get weather data for searched city
 
-async function fetchWeatherinfoCity(cityName){
+async function fetchWeatherinfoCity(city){
     
     loadingScreen.classList.add('active');
-    userContainer.classList.remove('active');
+    userInfoContainer.classList.remove('active');
     grantAccessContainer.classList.remove('active');
-    let city = cityName;
+    
     try{
-        let response = await fetch(
-            `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}`
+        userInfoContainer.classList.remove('active');
+        const response = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`
           );
         const data = await response.json();
         loadingScreen.classList.remove('active');
-        userContainer.classList.add('active');  
+        userInfoContainer.classList.add('active');  
         renderWeatherInfo(data);
     }
 
@@ -224,31 +257,6 @@ async function fetchWeatherinfoCity(cityName){
 }
 
 
-userTab.addEventListener('click' ,()=>{
-    //you clicked on userTab so current tab will switch to user tab 
-    switchTab(userTab);
-
-});
-
-searchTab.addEventListener('click' ,()=>{
-    //you clicked on userTab so current tab will switch to user tab 
-    switchTab(searchTab);
 
 
-});
-
-grantAccessButton.addEventListener('click' , getLocation);
-
-searchForm.addEventListener('submit' , (e)=>{
-    e.preventDefault();
-
-    let city = searchForm.value;
-
-    if(city === "") return;
-
-    else{
-        fetchWeatherinfoCity(city);
-    }
-
-})
 
